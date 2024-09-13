@@ -13,9 +13,9 @@ const userSchema= new mongoose.Schema({
     },
     email:{
         type: String,
-        required: true,
+        required:true,
         unique:true,
-        lowercase: true,
+        lowercase:true,
         trim: true,
     },
     fullName:{
@@ -26,7 +26,7 @@ const userSchema= new mongoose.Schema({
     },
     avatar:{
         type: String,//cloudinary url
-        required: true,
+        
     },
     coverImage:{
         type: String,//cloudinary url
@@ -50,7 +50,7 @@ const userSchema= new mongoose.Schema({
 
 userSchema.pre("save", async function(next){
     //agar field modify hi nhi hua then no middleware to run just run next
-    if(!this.isModified("passwod")) return next();
+    if(!this.isModified("password")) return next();
 
 
     this.password= await bcrypt.hash(this.password,10)
@@ -63,7 +63,7 @@ userSchema.methods.isPasswordCorrect= async function(password){
 }
 
 userSchema.methods.generateAcessToken= function(){
-    jwt.sign({
+   return jwt.sign({
         _id: this._id,
         email: this.email,
         username: this.username,
@@ -79,7 +79,7 @@ userSchema.methods.generateAcessToken= function(){
 
 
 userSchema.methods.generateRefreshToken= function(){
-    jwt.sign(
+   return jwt.sign(
         {
             _id: this._id
         },
