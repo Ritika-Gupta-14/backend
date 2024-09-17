@@ -11,4 +11,4 @@ channel: {
 }
 },{timestamps: true})
 
-export const Subscription= new mongoose.model(subscriptionSchema)
+export const Subscription= new mongoose.model("Subscription",subscriptionSchema)
