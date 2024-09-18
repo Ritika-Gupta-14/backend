@@ -32,9 +32,9 @@ router.route("/get-current-user").post(verifyJWT, getCurrentUser)
 
 router.route("/update-account-details").patch(verifyJWT, updateAccountDetails)
 
-router.route("/update-avatar").post(verifyJWT,upload.single("/avatar"),updateAvatar)
+router.route("/update-avatar").post(verifyJWT,upload.single("avatar"),updateAvatar)
 
-router.route("/update-cover-image").post(verifyJWT,upload.single("/coverImage"),updateCoverImage)
+router.route("/update-cover-image").post(verifyJWT,upload.single("coverImage"),updateCoverImage)
 
 router.route("/c/:username").post(verifyJWT,userChannelProfile)
 

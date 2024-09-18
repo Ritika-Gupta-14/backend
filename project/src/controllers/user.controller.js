@@ -55,6 +55,7 @@ export const registerUser= asyncHandler(async(req,res)=>{
    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
       localCoverImagePath=req.files.coverImage[0].path;
      }
+     console.log(localAvatarPath)
    // if(!localAvatarPath){
    //  throw new ApiError(400, " Avatar image must be present ")
    // }
@@ -141,8 +142,8 @@ export const loginUser= asyncHandler(async(req,res)=>{
 export const logoutUser= asyncHandler(async(req,res)=>{
    const user = await User.findByIdAndUpdate(req.user._id,
       {
-      $set:{
-         refreshToken:undefined
+      $unset:{
+         refreshToken:1
       }},
       {new:true}
       
@@ -255,13 +256,18 @@ export const updateAccountDetails= asyncHandler(async(req,res)=>{
 })
 
 export const updateAvatar= asyncHandler(async(req,res)=>{
+   console.log(req.file)
    const localAvatarPath= req.file?.path
-
+   
    if(!localAvatarPath){
       throw new ApiError(400,"Image not present")
    }
 
-   const avatar= uploadOnCloudinary(localAvatarPath)
+   const avatar= await uploadOnCloudinary(localAvatarPath)
+   console.log(avatar)
+   if(!avatar.url){
+      throw new ApiError(500,"can't upload image")
+   }
 
    const user= await User.findByIdAndUpdate(req.user?._id,
       {
@@ -270,9 +276,11 @@ export const updateAvatar= asyncHandler(async(req,res)=>{
          new:true
       }).select("-password -refreshToken")
 
-      return res.status(200,
+      return res.status(200).json(
+         new ApiResponse(
+         200,
          user,
-         "updated avatar")
+         "updated avatar"))
 })
 
 export const updateCoverImage= asyncHandler(async(req,res)=>{
@@ -282,7 +290,7 @@ export const updateCoverImage= asyncHandler(async(req,res)=>{
       throw new ApiError(400,"Cover Image not present")
    }
 
-   const coverImage = uploadOnCloudinary(localCoverImagePath)
+   const coverImage = await uploadOnCloudinary(localCoverImagePath)
 
    const user= await User.findByIdAndUpdate(req.user?._id,
       {
@@ -291,9 +299,11 @@ export const updateCoverImage= asyncHandler(async(req,res)=>{
          new:true
       }).select("-password -refreshToken")
 
-      return res.status(200,
-         user,
-         "updated Cover Image")
+      return res.status(200).json(
+         new ApiResponse(
+            200,
+            user,
+         "updated Cover Image"))
 })
 
 export const userChannelProfile= asyncHandler(async(req,res)=>{
@@ -357,9 +367,9 @@ export const userChannelProfile= asyncHandler(async(req,res)=>{
    }
 ])
 
-if(!channel?.length){
-   throw new ApiError(404,"no channel found")
-}
+ if(!channel?.length){
+    throw new ApiError(404,"no channel found")
+ }
 
 return res.status(200).json(
    new ApiResponse(200,channel[0],"channel fetched successfully")
@@ -410,7 +420,7 @@ export const getWatchHistory= asyncHandler(async(req,res)=>{
    if(!user?.length){
       throw new ApiError(400,"Can not fetch user")
    }
-   
+ 
    return res.status(200).json(
       new ApiResponse(200,user[0]?.watchHistory,"Watch history fetched successfully")
    )
