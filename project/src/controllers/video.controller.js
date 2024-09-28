@@ -20,7 +20,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }
     const pipeline=[
         {$match:{
-            owner:mongoose.Types.ObjectId(userId),
+            owner:new mongoose.Types.ObjectId(userId),
             ...(query &&{title:{$regex:query,$options:"i"}})
         }},
         {
@@ -111,11 +111,71 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: get video by id
+    if(!videoId){
+        throw new ApiError(400,"video id must be present")
+    }
+    const video = await Video.aggregate([
+        {$match:{
+            _id:new mongoose.Types.ObjectId(videoId)
+        }},{
+            $lookup:{
+                from: "users",
+                localField: "owner",
+                foreignField:"_id",
+                as: "owner",
+                pipeline:[
+                    {$project:{
+                        username:1,
+                        fullName:1,
+                        email:1,
+
+                    }}
+                ]
+            }
+        }
+    ])
+    if(!video|| video.length===0){
+        throw new ApiError(400,"video not found")
+    }
+    res.status(200).json(
+        new ApiResponse(200,video[0],"video details fetched succesfully")
+    )
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    if(!videoId){
+        throw new ApiError(400,"no video id")
+    }
     //TODO: update video details like title, description, thumbnail
+    const {title, description}=req.body
+    if(!(title||description)){
+        throw new ApiError(400,"title or description not present")
+    }
+    const localThumbnailPath= req.files?.thumbnail[0]?.path
+    if(!localThumbnailPath){
+        throw new ApiError(400,"thumbnail is not there")
+    }
+
+    const thumbnailpath=await uploadOnCloudinary(localThumbnailPath)
+    if(!thumbnailpath.url){
+        throw new ApiError(500,"internal server eror - unable to upload thumbnail")
+    }
+
+    const video= await Video.findByIdAndUpdate(videoId,{
+        $set:{
+            title,
+            description,
+            thumbnail: thumbnailpath
+        }
+
+    },{
+        new:true
+    })
+
+    return res.status(200).json(
+        new ApiResponse(200,video,"video details updated successfully")
+    )
 
 })
 
